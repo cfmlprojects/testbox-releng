@@ -1,0 +1,73 @@
+<project name="distro.build" default="build" basedir="./" xmlns:antcontrib="antlib:net.sf.antcontrib">
+
+	<loadproperties srcfile="build.properties" />
+	<import file="${cfdistro.build.file}" />
+
+	<target name="testbox.getversion">
+		<tstamp prefix="start"/>
+		<property name="build.number" value="${start.DSTAMP}${start.TSTAMP}"/>
+		<loadfile srcFile="${src.dir}/testbox/ant/testbox.xml" property="testbox.version"/>
+		<antcontrib:propertyregex override="yes" property="testbox.version" input="${testbox.version}" 
+			regexp=".*?&quot;testbox.version&quot;\s+value[\s]?=[\s]?&quot;([^&quot;]+)" select="\1" />
+		<echo message="TestBox Version: ${testbox.version}" />
+	</target>
+
+	<target name="test" depends="cfdistro.build">
+		<mapping virtual="/testbox" physical="@src.dir@/testbox" />
+		<mapping virtual="/tests" physical="@src.dir@/../tests" />
+		<server-run>
+			<testbox-rundirs basePath="${tests.dirpath}" componentPath="${tests.componentpath}" outputdir="${dist.dir}/testresults/"
+			runner="http://${runwar.host}:${runwar.port}/tests/tboxrunner.cfm?"/>
+		</server-run>
+	</target>
+
+	<target name="build" depends="testbox.getversion">
+		<delete dir="${temp.dir}"/>
+		<!-- Copy SRC to TestBox namespace -->
+		<copy todir="${temp.dir}/testbox/">
+			<fileset dir="${src.dir}/testbox">
+				<exclude name="ant/**" />
+				<exclude name="apidocs/**" />
+				<exclude name="tests/**" />
+				<exclude name="cpu.json" />
+				<exclude name=".*/**" />
+				<exclude name="settings.xml" />
+				<exclude name="build-testbox/**" />
+			</fileset>
+		</copy>
+		<!-- Replace Build Numbers -->
+		<replaceregexp match='@build.number@' replace="${build.number}" flags="ig" byline="true">
+			<fileset dir="${temp.dir}/testbox/">
+			</fileset>
+		</replaceregexp>
+		<!-- Execute ColdDoc 
+		<colddoc packagenames="mockbox"  
+			sourcepath="${mockbox.build.dir}" destdir="${mockbox.build.dir}/api" 
+			title="MockBox ${mockbox.version}" />
+		<zip destfile="${dist.dir}/TestBoxDocs-${testbox.version}.zip" basedir="${testbox.build.dir}/apidocs"></zip>
+		-->
+		<!-- Zip cores -->
+		<delete dir="${dist.dir}/" includes="*.zip" />
+		<zip destfile="${dist.dir}/testbox_${testbox.version}.zip" basedir="${temp.dir}/testbox/"></zip>
+		<!-- Copy Samples -->
+		<copy todir="${temp.dir}/testbox/samples">
+			<fileset dir="${src.dir}/testbox/tests/" />
+		</copy>
+		<zip destfile="${dist.dir}/testbox-all_${testbox.version}.zip" basedir="${temp.dir}/testbox"></zip>
+
+		<pom-and-deploy pomid="testbox.pom" packaging="zip" artifact="${dist.dir}/testbox_${testbox.version}.zip"
+		 buildtype="${mvn.type}"
+		 groupId="com.ortussolutions" artifactId="testbox" version="${testbox.version}" name="testbox"/>
+
+		<pom-and-deploy pomid="cli.pom" packaging="pom" buildtype="${mvn.type}"
+			groupId="com.ortussolutions" artifactId="testbox-all" version="${testbox.version}"
+			name="testbox-all">
+			<attachments>
+				<attach file="${dist.dir}/testbox_${testbox.version}.zip" type="zip" />
+				<attach file="${dist.dir}/testbox_${testbox.version}.zip" type="zip" classifier="doc" />
+			</attachments>
+		</pom-and-deploy>
+
+	</target>
+
+</project>

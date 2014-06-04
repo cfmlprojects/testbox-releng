@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<src>
+	<project>
+	<src dest="@sc.testbox-releng.dest@" branch="@sc.testbox-releng.branch@" 
+		remote="@sc.testbox-releng.remote@" type="@sc.testbox-releng.type@" uri="@sc.testbox-releng.uri@"
+		user="@sc.testbox-releng.user@" password="@sc.testbox-releng.password@" />
+	</project>
+	<sources>
+	</sources>
+</src>
