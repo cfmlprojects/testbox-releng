@@ -12,7 +12,7 @@
 		<echo message="TestBox Version: ${testbox.version}" />
 	</target>
 
-	<target name="test" depends="cfdistro.build">
+	<target name="build.test" depends="cfdistro.build, build">
 		<mapping virtual="/testbox" physical="@src.dir@/testbox" />
 		<mapping virtual="/tests" physical="@src.dir@/../tests" />
 		<server-run>
