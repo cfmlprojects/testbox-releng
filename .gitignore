@@ -1,4 +1,5 @@
 /dist
+/src
 /build/creds.txt
 /build/deploy.key
 /build/temp

@@ -6,7 +6,7 @@
 	<target name="testbox.getversion">
 		<tstamp prefix="start"/>
 		<property name="build.number" value="${start.DSTAMP}${start.TSTAMP}"/>
-		<loadfile srcFile="${src.dir}/testbox/ant/testbox.xml" property="testbox.version"/>
+		<loadfile srcFile="${src.dir}/testbox/build/testbox.xml" property="testbox.version"/>
 		<antcontrib:propertyregex override="yes" property="testbox.version" input="${testbox.version}" 
 			regexp=".*?&quot;testbox.version&quot;\s+value[\s]?=[\s]?&quot;([^&quot;]+)" select="\1" />
 		<echo message="TestBox Version: ${testbox.version}" />
