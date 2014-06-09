@@ -13,7 +13,7 @@
 	</target>
 
 	<target name="build.test" depends="cfdistro.build, build">
-		<mapping virtual="/testbox" physical="@src.dir@/testbox" />
+		<mapping virtual="/testbox" physical="@src.dir@/testbox" scmurl="${sc.testbox-releng.http}" />
 		<mapping virtual="/tests" physical="@src.dir@/../tests" />
 		<server-run>
 			<testbox-rundirs basePath="${tests.dirpath}" componentPath="${tests.componentpath}" outputdir="${dist.dir}/testresults/"
