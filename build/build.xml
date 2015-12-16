@@ -6,23 +6,48 @@
 	<target name="testbox.getversion">
 		<tstamp prefix="start"/>
 		<property name="build.number" value="${start.DSTAMP}${start.TSTAMP}"/>
-		<loadfile srcFile="${src.dir}/testbox/build/testbox.xml" property="testbox.version"/>
+    <antcontrib:if>
+      <available file="${src.dir}/testbox/build/build.xml" />
+      <then>
+        <loadfile srcFile="${src.dir}/testbox/build/build.xml" property="testbox.version"/>
+      </then>
+      <else>
+        <loadfile srcFile="${src.dir}/testbox/build/testbox.xml" property="testbox.version"/>
+      </else>
+    </antcontrib:if>
 		<antcontrib:propertyregex override="yes" property="testbox.version" input="${testbox.version}" 
 			regexp=".*?&quot;testbox.version&quot;\s+value[\s]?=[\s]?&quot;([^&quot;]+)" select="\1" />
 		<echo message="TestBox Version: ${testbox.version}" />
 	</target>
 
-	<target name="build.test" depends="cfdistro.build, build">
+	<target name="build" depends="project.update, build.test, build.doc, deploy">
+	</target>
+
+	<target name="build.testwar" depends="testbox.getversion, cfdistro.build">
 		<mapping virtual="/testbox" physical="@src.dir@/testbox" scmurl="${sc.testbox-releng.http}" />
 		<mapping virtual="/tests" physical="@src.dir@/../tests" />
+	</target>
+
+	<target name="build.test" depends="build.testwar">
 		<server-run>
 			<testbox-rundirs basePath="${tests.dirpath}" componentPath="${tests.componentpath}" outputdir="${dist.dir}/testresults/"
 			runner="http://${runwar.host}:${runwar.port}/tests/tboxrunner.cfm?"/>
 		</server-run>
 	</target>
 
-	<target name="build" depends="testbox.getversion">
-		<delete dir="${temp.dir}"/>
+	<target name="build.doc" depends="testbox.getversion">
+		<delete dir="${temp.dir}/apidocs" />
+		<delete dir="${dist.dir}/testbox-doc_${testbox.version}.zip" />
+		<mkdir dir="${temp.dir}/apidocs" />
+		<abspath path="${temp.dir}" property="temp.dir"/>
+		<colddoc packagenames="testbox"
+			sourcepath="${temp.dir}/testbox/" destdir="${temp.dir}/apidocs"
+			title="TestBox ${testbox.version}" />
+		<zip destfile="${dist.dir}/testbox-doc_${testbox.version}.zip" basedir="${temp.dir}/apidocs"></zip>
+	</target>
+
+	<target name="deploy" depends="testbox.getversion">
+		<delete dir="${temp.dir}/testbox/"/>
 		<!-- Copy SRC to TestBox namespace -->
 		<copy todir="${temp.dir}/testbox/">
 			<fileset dir="${src.dir}/testbox">
@@ -40,14 +65,8 @@
 			<fileset dir="${temp.dir}/testbox/">
 			</fileset>
 		</replaceregexp>
-		<!-- Execute ColdDoc 
-		<colddoc packagenames="mockbox"  
-			sourcepath="${mockbox.build.dir}" destdir="${mockbox.build.dir}/api" 
-			title="MockBox ${mockbox.version}" />
-		<zip destfile="${dist.dir}/TestBoxDocs-${testbox.version}.zip" basedir="${testbox.build.dir}/apidocs"></zip>
-		-->
 		<!-- Zip cores -->
-		<delete dir="${dist.dir}/" includes="*.zip" />
+		<delete dir="${dist.dir}/" includes="*.zip" excludes="testbox-doc*.zip" />
 		<zip destfile="${dist.dir}/testbox_${testbox.version}.zip" basedir="${temp.dir}/testbox/"></zip>
 		<!-- Copy Samples -->
 		<copy todir="${temp.dir}/testbox/samples">
@@ -56,18 +75,16 @@
 		<zip destfile="${dist.dir}/testbox-all_${testbox.version}.zip" basedir="${temp.dir}/testbox"></zip>
 
 		<pom-and-deploy pomid="testbox.pom" packaging="zip" artifact="${dist.dir}/testbox_${testbox.version}.zip"
-		 buildtype="${mvn.type}"
-		 groupId="com.ortussolutions" artifactId="testbox" version="${testbox.version}" name="testbox"/>
+		 buildtype="${mvn.type}" groupId="com.ortussolutions" artifactId="testbox" version="${testbox.version}" name="testbox"/>
 
-		<pom-and-deploy pomid="cli.pom" packaging="pom" buildtype="${mvn.type}"
+		<pom-and-deploy pomid="testboxall.pom" packaging="pom" buildtype="${mvn.type}"
 			groupId="com.ortussolutions" artifactId="testbox-all" version="${testbox.version}"
 			name="testbox-all">
 			<attachments>
 				<attach file="${dist.dir}/testbox_${testbox.version}.zip" type="zip" />
-				<attach file="${dist.dir}/testbox_${testbox.version}.zip" type="zip" classifier="doc" />
+				<attach file="${dist.dir}/testbox-doc_${testbox.version}.zip" type="zip" classifier="doc" />
 			</attachments>
 		</pom-and-deploy>
-
 	</target>
 
 </project>
